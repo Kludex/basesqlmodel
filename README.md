@@ -1,5 +1,5 @@
 <h1 align="center">
-    <strong>basesqlmodel</strong>
+    <strong>Base SQLModel</strong>
 </h1>
 <p align="center">
     <a href="https://github.com/Kludex/basesqlmodel" target="_blank">
@@ -13,9 +13,10 @@
     </a>
     <img src="https://img.shields.io/pypi/pyversions/basesqlmodel">
     <img src="https://img.shields.io/github/license/Kludex/basesqlmodel">
+    <p align="center"><i> A very simple CRUD class for SQLModel! ✨ </i></p>
 </p>
 
-A very simple CRUD class for SQLModel! :sparkles:
+
 
 Inspired on:
 - [Full Stack FastAPI and PostgreSQL - Base Project Generator](https://github.com/tiangolo/full-stack-fastapi-postgresql/blob/master/%7B%7Bcookiecutter.project_slug%7D%7D/backend/app/app/crud/base.py)
