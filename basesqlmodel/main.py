@@ -2,13 +2,30 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, List, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import noload, raiseload, selectinload, subqueryload
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 Self = TypeVar("Self", bound="Base")
+
+Q = TypeVar("Q", bound="Any")
+
+
+def _add_eager_load_method(query: Q, attribute: str, lazy: str) -> Q:
+    if lazy == "subquery":
+        method = subqueryload
+    elif lazy == "selectin":
+        method = selectinload
+    elif lazy == "raise" or lazy == "raise_on_sql":
+        method = raiseload
+    elif lazy == "noload":
+        method = noload
+    else:
+        raise ValueError(f"Method {lazy} is not supported with async connections")
+    return query.options(method(attribute))
 
 
 class InvalidTable(RuntimeError):
@@ -46,10 +63,19 @@ class Base(SQLModel):
     @classmethod
     @validate_table
     async def get(
-        cls: Type[Self], session: AsyncSession, *args: Any, **kwargs: Any
-    ) -> Self:
-        result = await session.execute(select(cls).filter(*args).filter_by(**kwargs))
-        return result.scalars().first()
+        cls: Type[Self],
+        session: AsyncSession,
+        *args: Any,
+        lazy_options: Optional[Dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> Optional[Self]:
+        query = select(cls)
+        if lazy_options:
+            for key, value in lazy_options.items():
+                query = _add_eager_load_method(query, key, value)
+        result = await session.execute(query.filter(*args).filter_by(**kwargs))
+        obj = result.scalars().first()
+        return obj
 
     @classmethod
     @validate_table

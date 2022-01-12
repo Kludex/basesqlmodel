@@ -2,7 +2,7 @@ import pytest
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from basesqlmodel.main import Base, InvalidTable, is_table
-from tests.utils import Potato
+from tests.utils import Potato, Potatoes
 
 
 def test_is_table() -> None:
@@ -47,3 +47,13 @@ async def test_update(session: AsyncSession) -> None:
 async def test_delete(session: AsyncSession) -> None:
     obj = await Potato.create(session, name="Blue")
     assert await Potato.delete(session, name="Blue") == obj
+
+
+@pytest.mark.asyncio
+async def test_eagerload(session: AsyncSession) -> None:
+    collection = await Potatoes.create(session)
+    await Potato.create(session, name="Blue", potato_collection_id=collection.id)
+    await Potato.create(session, name="Red", potato_collection_id=collection.id)
+
+    potatoes = await Potatoes.get(session, lazy_options={"potatoes": "selectin"})
+    assert len(potatoes.potatoes) == 2
