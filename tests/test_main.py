@@ -14,7 +14,6 @@ def test_is_table() -> None:
     assert not is_table(PotatoJunior)
 
 
-@pytest.mark.asyncio
 async def test_invalid_table(session: AsyncSession) -> None:
     class Banana(Base):
         ...
@@ -23,13 +22,11 @@ async def test_invalid_table(session: AsyncSession) -> None:
         await Base.get_multi(session)
 
 
-@pytest.mark.asyncio
 async def test_get(session: AsyncSession) -> None:
     obj = await Potato.create(session, name="Blue")
     assert await Potato.get(session, name="Blue") == obj
 
 
-@pytest.mark.asyncio
 async def test_get_multi(session: AsyncSession) -> None:
     for name in ("Red", "Green", "Blue"):
         await Potato.create(session, name=name)
@@ -37,13 +34,11 @@ async def test_get_multi(session: AsyncSession) -> None:
     assert len(await Potato.get_multi(session)) == 3
 
 
-@pytest.mark.asyncio
 async def test_update(session: AsyncSession) -> None:
     obj = await Potato.create(session, name="Blue")
     await obj.update(session, name="Green")
 
 
-@pytest.mark.asyncio
 async def test_delete(session: AsyncSession) -> None:
     obj = await Potato.create(session, name="Blue")
     assert await Potato.delete(session, name="Blue") == obj
