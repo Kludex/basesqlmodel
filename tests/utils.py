@@ -13,5 +13,6 @@ class Potato(Base, table=True):
 
 class Potatoes(Base, table=True):
     id: int = Field(primary_key=True)
+    name: Optional[str]
 
     potatoes: List[Potato] = Relationship()
