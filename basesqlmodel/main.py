@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any, List, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -46,7 +47,7 @@ class Base(SQLModel):
     @classmethod
     @validate_table
     async def get(
-        cls: Type[Self], session: AsyncSession, *args: Any, **kwargs: Any
+        cls: Type[Self], session: AsyncSession, *args: BinaryExpression, **kwargs: Any
     ) -> Self:
         result = await session.execute(select(cls).filter(*args).filter_by(**kwargs))
         return result.scalars().first()
@@ -56,10 +57,10 @@ class Base(SQLModel):
     async def get_multi(
         cls: Type[Self],
         session: AsyncSession,
-        *args,
+        *args: BinaryExpression,
         offset: int = 0,
         limit: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[Self]:
         result = await session.execute(
             select(cls).filter(*args).filter_by(**kwargs).offset(offset).limit(limit)
@@ -88,7 +89,7 @@ class Base(SQLModel):
     @classmethod
     @validate_table
     async def delete(
-        cls: Type[Self], session: AsyncSession, *args: Any, **kwargs: Any
+        cls: Type[Self], session: AsyncSession, *args: BinaryExpression, **kwargs: Any
     ) -> Self:
         db_obj = await cls.get(session, *args, **kwargs)
         await session.delete(db_obj)
