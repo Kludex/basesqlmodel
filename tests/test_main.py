@@ -1,8 +1,9 @@
 import pytest
+from sqlalchemy.exc import InvalidRequestError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from basesqlmodel.main import Base, InvalidTable, is_table
-from tests.utils import Potato
+from tests.utils import Potato, Potatoes
 
 
 def test_is_table() -> None:
@@ -47,3 +48,45 @@ async def test_update(session: AsyncSession) -> None:
 async def test_delete(session: AsyncSession) -> None:
     obj = await Potato.create(session, name="Blue")
     assert await Potato.delete(session, name="Blue") == obj
+
+
+@pytest.mark.asyncio
+async def test_eagerload(session: AsyncSession) -> None:
+    collection = await Potatoes.create(session)
+    await Potato.create(session, name="Blue", potato_collection_id=collection.id)
+    await Potato.create(session, name="Red", potato_collection_id=collection.id)
+
+    potatoes = await Potatoes.get(session, load_strategy={"potatoes": "selectin"})
+    assert len(potatoes.potatoes) == 2
+
+
+@pytest.mark.asyncio
+async def test_subqueryload(session: AsyncSession) -> None:
+    collection = await Potatoes.create(session)
+    await Potato.create(session, name="Blue", potato_collection_id=collection.id)
+    await Potato.create(session, name="Red", potato_collection_id=collection.id)
+
+    potatoes = await Potatoes.get(session, load_strategy={"potatoes": "subquery"})
+    assert len(potatoes.potatoes) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("load_strategy", ("raise", "raise_on_sql"))
+async def test_raiseload(load_strategy: str, session: AsyncSession) -> None:
+    collection = await Potatoes.create(session)
+    await Potato.create(session, name="Blue", potato_collection_id=collection.id)
+    await Potato.create(session, name="Red", potato_collection_id=collection.id)
+
+    potatoes = await Potatoes.get(session, load_strategy={"potatoes": load_strategy})
+    with pytest.raises(InvalidRequestError):
+        potatoes.potatoes
+
+
+@pytest.mark.asyncio
+async def test_noload(session: AsyncSession) -> None:
+    collection = await Potatoes.create(session)
+    await Potato.create(session, name="Blue", potato_collection_id=collection.id)
+    await Potato.create(session, name="Red", potato_collection_id=collection.id)
+
+    potatoes = await Potatoes.get(session, load_strategy={"potatoes": "noload"})
+    assert len(potatoes.potatoes) == 0

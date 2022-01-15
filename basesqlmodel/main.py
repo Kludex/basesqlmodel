@@ -2,14 +2,32 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, List, Type, TypeVar
+from typing import Any, Callable, Dict, List, Literal, Type, TypeVar
 
+from black import sys
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import Query, noload, raiseload, selectinload, subqueryload
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+if sys.version_info < (3, 10):  # pragma: no cover
+    from typing_extensions import TypeAlias
+else:  # pragma: no cover
+    from typing import TypeAlias
+
+
 Self = TypeVar("Self", bound="Base")
+LoadStrategy: TypeAlias = Literal[
+    "subquery", "selectin", "raise", "raise_on_sql", "noload"
+]
+load_strategy_map: Dict[LoadStrategy, Callable[..., Query]] = {
+    "subquery": subqueryload,
+    "selectin": selectinload,
+    "raise": raiseload,
+    "raise_on_sql": raiseload,
+    "noload": noload,
+}
 
 
 class InvalidTable(RuntimeError):
@@ -43,13 +61,28 @@ def validate_table(func):
     return wrapper
 
 
+def _prepare_query(
+    cls: Type[Self], load_strategy: Dict[str, LoadStrategy] | None
+) -> Query:
+    load_strategy = load_strategy or {}
+    query = select(cls)
+    for key, strategy in load_strategy.items():
+        query = query.options(load_strategy_map[strategy](key))
+    return query
+
+
 class Base(SQLModel):
     @classmethod
     @validate_table
     async def get(
-        cls: Type[Self], session: AsyncSession, *args: BinaryExpression, **kwargs: Any
+        cls: Type[Self],
+        session: AsyncSession,
+        *args: BinaryExpression,
+        load_strategy: Dict[str, LoadStrategy] = None,
+        **kwargs: Any,
     ) -> Self:
-        result = await session.execute(select(cls).filter(*args).filter_by(**kwargs))
+        query = _prepare_query(cls, load_strategy)
+        result = await session.execute(query.filter(*args).filter_by(**kwargs))
         return result.scalars().first()
 
     @classmethod
@@ -58,12 +91,14 @@ class Base(SQLModel):
         cls: Type[Self],
         session: AsyncSession,
         *args: BinaryExpression,
+        load_strategy: Dict[str, LoadStrategy] = None,
         offset: int = 0,
         limit: int = 100,
         **kwargs: Any,
     ) -> List[Self]:
+        query = _prepare_query(cls, load_strategy)
         result = await session.execute(
-            select(cls).filter(*args).filter_by(**kwargs).offset(offset).limit(limit)
+            query.filter(*args).filter_by(**kwargs).offset(offset).limit(limit)
         )
         return result.scalars().all()
 
