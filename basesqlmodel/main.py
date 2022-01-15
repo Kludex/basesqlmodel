@@ -4,24 +4,15 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Dict, List, Literal, Type, TypeVar
 
-from black import sys
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Query, noload, raiseload, selectinload, subqueryload
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-if sys.version_info < (3, 10):  # pragma: no cover
-    from typing_extensions import TypeAlias
-else:  # pragma: no cover
-    from typing import TypeAlias
-
-
 Self = TypeVar("Self", bound="Base")
-LoadStrategy: TypeAlias = Literal[
-    "subquery", "selectin", "raise", "raise_on_sql", "noload"
-]
-load_strategy_map: Dict[LoadStrategy, Callable[..., Query]] = {
+LoadStrategy = Literal["subquery", "selectin", "raise", "raise_on_sql", "noload"]
+load_strategy_map: Dict[LoadStrategy, Callable[..., Any]] = {
     "subquery": subqueryload,
     "selectin": selectinload,
     "raise": raiseload,
