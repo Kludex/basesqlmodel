@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "basesqlmodel"
-version = "0.1.0"
+version = "0.1.1"
 description = "A very simple CRUD class for SQLModel! :sparkles:"
 authors = ["Marcelo Trylesinski <marcelotryle@gmail.com>"]
 license = "MIT"
