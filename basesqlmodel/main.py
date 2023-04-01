@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, List, Literal, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Literal, Type, TypeVar
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Query, noload, raiseload, selectinload, subqueryload
@@ -69,7 +69,7 @@ class Base(SQLModel):
         cls: Type[Self],
         session: AsyncSession,
         *args: BinaryExpression,
-        load_strategy: Union[Dict[str, LoadStrategy], None] = None,
+        load_strategy: Dict[str, LoadStrategy] | None= None,
         **kwargs: Any,
     ) -> Self:
         query = _prepare_query(cls, load_strategy)
@@ -82,7 +82,7 @@ class Base(SQLModel):
         cls: Type[Self],
         session: AsyncSession,
         *args: BinaryExpression,
-        load_strategy: Union[Dict[str, LoadStrategy], None] = None,
+        load_strategy: Dict[str, LoadStrategy] | None = None,
         offset: int = 0,
         limit: int = 100,
         **kwargs: Any,
