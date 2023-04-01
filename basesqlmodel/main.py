@@ -69,7 +69,7 @@ class Base(SQLModel):
         cls: Type[Self],
         session: AsyncSession,
         *args: BinaryExpression,
-        load_strategy: Dict[str, LoadStrategy] | None= None,
+        load_strategy: Dict[str, LoadStrategy] | None = None,
         **kwargs: Any,
     ) -> Self:
         query = _prepare_query(cls, load_strategy)
